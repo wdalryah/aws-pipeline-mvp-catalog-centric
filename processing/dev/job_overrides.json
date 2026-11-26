@@ -1,0 +1,37 @@
+{
+  "_comment": "Dev overrides are reserved for local/development testing. The deployed environment is prelive. These values are used when running jobs locally or in a sandbox.",
+  "env": "dev",
+  "region": "eu-north-1",
+  "org": "acme",
+  "domain": "finance",
+  "data_lake_bucket": "datalake-medallion-dev-eu-north-1",
+  "mwaa_bucket": "datalake-medallion-mwaa-dev",
+  "athena_workgroup": "datalake-dev",
+  "bronze_db": "bronze_db_dev",
+  "gold_db": "gold_db_dev",
+  "tables": {
+    "customers": {
+      "source_path": "s3://datalake-medallion-dev-eu-north-1/raw/landing/customers/",
+      "target_path": "s3://datalake-medallion-dev-eu-north-1/bronze/customers/",
+      "worker_type": "G.1X",
+      "number_of_workers": 2
+    },
+    "orders": {
+      "source_path": "s3://datalake-medallion-dev-eu-north-1/raw/landing/orders/",
+      "target_path": "s3://datalake-medallion-dev-eu-north-1/bronze/orders/",
+      "worker_type": "G.1X",
+      "number_of_workers": 2
+    },
+    "products": {
+      "source_path": "s3://datalake-medallion-dev-eu-north-1/raw/landing/products/",
+      "target_path": "s3://datalake-medallion-dev-eu-north-1/bronze/products/",
+      "worker_type": "G.1X",
+      "number_of_workers": 2
+    }
+  },
+  "gold": {
+    "semantic_orders": {
+      "target_path": "s3://datalake-medallion-dev-eu-north-1/gold/semantic_orders_summary/"
+    }
+  }
+}

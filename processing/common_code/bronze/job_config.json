@@ -1,0 +1,43 @@
+{
+  "tables": {
+    "customers": {
+      "natural_keys": ["customer_id"],
+      "source_format": "csv",
+      "worker_type": "G.1X",
+      "number_of_workers": 2,
+      "timeout_minutes": 60,
+      "max_concurrent_runs": 1,
+      "default_arguments": {
+        "--table_name": "customers",
+        "--enable-job-insights": "true",
+        "--enable-continuous-cloudwatch-log": "true"
+      }
+    },
+    "orders": {
+      "natural_keys": ["order_id"],
+      "source_format": "csv",
+      "worker_type": "G.1X",
+      "number_of_workers": 2,
+      "timeout_minutes": 60,
+      "max_concurrent_runs": 1,
+      "default_arguments": {
+        "--table_name": "orders",
+        "--enable-job-insights": "true",
+        "--enable-continuous-cloudwatch-log": "true"
+      }
+    },
+    "products": {
+      "natural_keys": ["product_id"],
+      "source_format": "csv",
+      "worker_type": "G.1X",
+      "number_of_workers": 2,
+      "timeout_minutes": 60,
+      "max_concurrent_runs": 1,
+      "default_arguments": {
+        "--table_name": "products",
+        "--enable-job-insights": "true",
+        "--enable-continuous-cloudwatch-log": "true"
+      }
+    }
+  }
+}

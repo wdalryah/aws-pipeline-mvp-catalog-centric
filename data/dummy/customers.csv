@@ -1,0 +1,11 @@
+customer_id,name,email,country
+C001,Alice Smith,alice.smith@example.com,US
+C002,Bob Jones,bob.jones@example.com,GB
+C003,Clara Diaz,clara.diaz@example.com,ES
+C004,David Kim,david.kim@example.com,KR
+C005,Eva Müller,eva.mueller@example.com,DE
+C006,Frank Rossi,frank.rossi@example.com,IT
+C007,Grace Chen,grace.chen@example.com,CN
+C008,Hiro Tanaka,hiro.tanaka@example.com,JP
+C009,Isabel Santos,isabel.santos@example.com,BR
+C010,Jack O'Brien,jack.obrien@example.com,IE
