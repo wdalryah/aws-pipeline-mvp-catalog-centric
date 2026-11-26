@@ -40,6 +40,23 @@ env:
 jobs:
 
   # --------------------------------------------------------------------------
+  # Debug: print the exact OIDC sub claim GitHub sends — remove after fix.
+  # --------------------------------------------------------------------------
+  debug-oidc:
+    name: "Debug OIDC token claims"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decode OIDC token and print sub
+        run: |
+          OIDC_TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+          # Decode the payload (middle section of the JWT)
+          PAYLOAD=$(echo "$OIDC_TOKEN" | cut -d'.' -f2)
+          # Pad base64 to a multiple of 4
+          PADDED="${PAYLOAD}$(printf '%0.s=' $(seq 1 $((4 - ${#PAYLOAD} % 4))))"
+          echo "$PADDED" | base64 -d 2>/dev/null | jq '{sub, aud, iss, repository, environment, job_workflow_ref}'
+
+  # --------------------------------------------------------------------------
   # Parse the pipeline input into a layer output consumed by downstream jobs.
   # Only runs on workflow_dispatch.
   # --------------------------------------------------------------------------
