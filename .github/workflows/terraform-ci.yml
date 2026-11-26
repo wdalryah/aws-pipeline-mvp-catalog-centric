@@ -64,25 +64,6 @@ jobs:
           echo "Selected : $PIPELINE  →  layer=$LAYER"
 
   # --------------------------------------------------------------------------
-  # DEBUG — decode the actual OIDC JWT to see exact sub/aud claims
-  # --------------------------------------------------------------------------
-  debug-jwt:
-    name: "DEBUG · Decode OIDC JWT"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fetch and decode OIDC token
-        run: |
-          TOKEN=$(curl -sS \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" \
-            | jq -r '.value')
-          PAYLOAD=$(echo $TOKEN | cut -d'.' -f2 | sed 's/-/+/g; s/_/\//g')
-          r=$((${#PAYLOAD} % 4))
-          [ $r -ne 0 ] && PAYLOAD="${PAYLOAD}$(printf '=%.0s' $(seq 1 $((4-r))))"
-          echo "=== JWT Claims ==="
-          echo "$PAYLOAD" | base64 -d | jq '{sub, aud, iss, repository, environment, ref, job_workflow_ref}'
-
-  # --------------------------------------------------------------------------
   # 1. Init — terraform init
   # --------------------------------------------------------------------------
   tf-init:
