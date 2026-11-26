@@ -1,8 +1,20 @@
 name: Terraform CI
 
 # ---------------------------------------------------------------------------
-# Triggers
+# AWS authentication: OIDC via GitHubActions-datalake-medallion role.
+# OIDC provider thumbprint must match the current GitHub certificate.
+# If this starts failing with "Not authorized to perform
+# sts:AssumeRoleWithWebIdentity", run:
+#   openssl s_client -connect token.actions.githubusercontent.com:443 2>/dev/null \
+#     | openssl x509 -fingerprint -noout -sha1 \
+#     | tr -d ':' | tr '[:upper:]' '[:lower:]'
+# Then update the thumbprint on the OIDC provider:
+#   aws iam update-open-id-connect-provider-thumbprint \
+#     --open-id-connect-provider-arn \
+#       arn:aws:iam::418638389153:oidc-provider/token.actions.githubusercontent.com \
+#     --thumbprint-list <new-thumbprint>
 # ---------------------------------------------------------------------------
+
 on:
   workflow_dispatch:
     inputs:
@@ -24,16 +36,13 @@ permissions:
   pull-requests: write
 
 env:
-  TF_VERSION:   "1.7.0"
-  AWS_REGION:   "eu-north-1"
+  TF_VERSION:     "1.7.0"
+  AWS_REGION:     "eu-north-1"
   TF_WORKING_DIR: "infra/terraform/environments/prelive"
-  GITHUB_OWNER: "wdalryah"
-  GITHUB_REPO:  "aws-pipeline-mvp-catalog-centric"
-  OIDC_ROLE:    "arn:aws:iam::418638389153:role/GitHubActions-datalake-medallion"
+  GITHUB_OWNER:   "wdalryah"
+  GITHUB_REPO:    "aws-pipeline-mvp-catalog-centric"
+  OIDC_ROLE:      "arn:aws:iam::418638389153:role/GitHubActions-datalake-medallion"
 
-# ---------------------------------------------------------------------------
-# Jobs
-# ---------------------------------------------------------------------------
 jobs:
 
   # --------------------------------------------------------------------------
@@ -52,12 +61,10 @@ jobs:
           PIPELINE="${{ github.event.inputs.pipeline }}"
           LAYER=$(echo "$PIPELINE" | awk -F'/' '{print $3}')
           echo "layer=$LAYER" >> "$GITHUB_OUTPUT"
-          echo "Selected pipeline : $PIPELINE"
-          echo "Resolved layer    : $LAYER"
+          echo "Selected : $PIPELINE  →  layer=$LAYER"
 
   # --------------------------------------------------------------------------
-  # 1. tf-init — checkout + terraform init
-  #    Runs for both processing (dispatch) and PR validation.
+  # 1. Init — terraform init
   # --------------------------------------------------------------------------
   tf-init:
     name: "1 · Init"
@@ -84,15 +91,8 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false
 
-      # Cache the .terraform directory for downstream jobs
-      - name: Cache Terraform plugins
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ env.TF_WORKING_DIR }}/.terraform
-          key: terraform-${{ runner.os }}-${{ hashFiles('${{ env.TF_WORKING_DIR }}/.terraform.lock.hcl') }}
-
   # --------------------------------------------------------------------------
-  # 2. tf-validate — fmt check + validate
+  # 2. Validate — fmt check + terraform validate
   # --------------------------------------------------------------------------
   tf-validate:
     name: "2 · Validate"
@@ -127,7 +127,7 @@ jobs:
         run: terraform validate
 
   # --------------------------------------------------------------------------
-  # 3. tf-plan — generate plan and post summary to PR / workflow run
+  # 3. Plan — generate plan, post summary, upload artifact
   # --------------------------------------------------------------------------
   tf-plan:
     name: "3 · Plan"
@@ -161,13 +161,12 @@ jobs:
             -var="github_owner=${{ env.GITHUB_OWNER }}" \
             -var="github_repo=${{ env.GITHUB_REPO }}" \
             2>&1 | tee plan.txt
-          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
-      - name: Post plan summary
+      - name: Post plan to summary
         run: |
           echo "## Terraform Plan — acme/finance/processing" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          tail -40 plan.txt >> $GITHUB_STEP_SUMMARY
+          echo '```hcl' >> $GITHUB_STEP_SUMMARY
+          tail -50 plan.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload plan artifact
@@ -180,8 +179,7 @@ jobs:
           retention-days: 5
 
   # --------------------------------------------------------------------------
-  # 4. tf-deploy — apply the saved plan (dispatch only, gated on environment)
-  #    GitHub environment "prelive" provides the manual approval gate.
+  # 4. Deploy — apply saved plan (dispatch only, gated on prelive environment)
   # --------------------------------------------------------------------------
   tf-deploy:
     name: "4 · Deploy"
@@ -225,7 +223,7 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           terraform output -json | jq -r 'to_entries[] | "| \(.key) | \(.value.value) |"' >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload Glue scripts to S3
+      - name: Sync Glue scripts to S3
         run: |
           BUCKET=$(terraform output -raw data_lake_bucket_name)
           aws s3 sync ../../processing/common_code/ \
@@ -234,7 +232,7 @@ jobs:
             --region ${{ env.AWS_REGION }}
           echo "Scripts → s3://${BUCKET}/scripts/processing/" >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload Airflow DAGs to S3
+      - name: Sync Airflow DAGs to S3
         run: |
           MWAA_BUCKET=$(terraform output -raw mwaa_bucket_name)
           aws s3 sync ../../../workflow/dags/ \
@@ -246,7 +244,7 @@ jobs:
           echo "DAGs → s3://${MWAA_BUCKET}/dags/" >> $GITHUB_STEP_SUMMARY
 
   # --------------------------------------------------------------------------
-  # Ingestion deploy — placeholder, triggered when layer == 'ingestion'
+  # Ingestion — placeholder, triggered when layer == 'ingestion'
   # --------------------------------------------------------------------------
   deploy-ingestion:
     name: "Deploy: acme/finance/ingestion"
@@ -256,10 +254,9 @@ jobs:
     environment: prelive
     steps:
       - uses: actions/checkout@v4
-
-      - name: Ingestion layer placeholder
+      - name: Ingestion placeholder
         run: |
           echo "## acme/finance/ingestion" >> $GITHUB_STEP_SUMMARY
-          echo "DMS and table mapping configuration will be deployed here in a future iteration." >> $GITHUB_STEP_SUMMARY
-          echo "Current assumption: tables are pre-landed in s3://datalake-medallion-prelive-eu-north-1/raw/landing/" >> $GITHUB_STEP_SUMMARY
+          echo "DMS configuration will be added in a future iteration." >> $GITHUB_STEP_SUMMARY
+          echo "Tables assumed pre-landed at: s3://datalake-medallion-prelive-eu-north-1/raw/landing/" >> $GITHUB_STEP_SUMMARY
           ls ingestion/
