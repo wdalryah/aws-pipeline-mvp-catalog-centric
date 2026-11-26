@@ -40,16 +40,16 @@ resource "aws_glue_job" "raw_to_bronze" {
   }
 
   default_arguments = {
-    "--job-language"                    = "python"
-    "--enable-job-insights"             = "true"
+    "--job-language"                     = "python"
+    "--enable-job-insights"              = "true"
     "--enable-continuous-cloudwatch-log" = "true"
-    "--enable-metrics"                  = "true"
-    "--TempDir"                         = "s3://${var.data_lake_bucket_name}/glue-temp/"
-    "--env"                             = var.env
-    "--region"                          = var.region
-    "--source_path"                     = "s3://${var.data_lake_bucket_name}/raw/landing/${each.key}/"
-    "--target_path"                     = "s3://${var.data_lake_bucket_name}/bronze/${each.key}/"
-    "--table_name"                      = each.key
+    "--enable-metrics"                   = "true"
+    "--TempDir"                          = "s3://${var.data_lake_bucket_name}/glue-temp/"
+    "--env"                              = var.env
+    "--region"                           = var.region
+    "--source_path"                      = "s3://${var.data_lake_bucket_name}/raw/landing/${each.key}/"
+    "--target_path"                      = "s3://${var.data_lake_bucket_name}/bronze/${each.key}/"
+    "--table_name"                       = each.key
   }
 
   execution_property {
@@ -78,16 +78,16 @@ resource "aws_glue_job" "bronze_to_gold" {
   }
 
   default_arguments = {
-    "--job-language"                    = "python"
-    "--enable-job-insights"             = "true"
+    "--job-language"                     = "python"
+    "--enable-job-insights"              = "true"
     "--enable-continuous-cloudwatch-log" = "true"
-    "--enable-metrics"                  = "true"
-    "--TempDir"                         = "s3://${var.data_lake_bucket_name}/glue-temp/"
-    "--env"                             = var.env
-    "--region"                          = var.region
-    "--source_db"                       = "bronze_db_${var.env}"
-    "--target_path"                     = "s3://${var.data_lake_bucket_name}/gold/semantic_orders_summary/"
-    "--workgroup"                       = "datalake-${var.env}"
+    "--enable-metrics"                   = "true"
+    "--TempDir"                          = "s3://${var.data_lake_bucket_name}/glue-temp/"
+    "--env"                              = var.env
+    "--region"                           = var.region
+    "--source_db"                        = "bronze_db_${var.env}"
+    "--target_path"                      = "s3://${var.data_lake_bucket_name}/gold/semantic_orders_summary/"
+    "--workgroup"                        = "datalake-${var.env}"
   }
 
   execution_property {

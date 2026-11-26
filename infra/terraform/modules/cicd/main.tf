@@ -26,8 +26,8 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["s3:*"]
+        Effect = "Allow"
+        Action = ["s3:*"]
         Resource = [
           aws_s3_bucket.artifacts.arn,
           "${aws_s3_bucket.artifacts.arn}/*",
@@ -87,9 +87,9 @@ resource "aws_iam_role_policy" "codebuild_policy" {
         ]
       },
       {
-        Sid    = "CloudWatchLogs"
-        Effect = "Allow"
-        Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Sid      = "CloudWatchLogs"
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = ["arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/codebuild/*"]
       },
       {
@@ -237,9 +237,9 @@ resource "aws_codebuild_project" "tf_plan" {
         }
       }
       artifacts = {
-        files              = ["$TF_WORKING_DIR/tfplan", "$TF_WORKING_DIR/.terraform.lock.hcl"]
-        discard-paths      = "no"
-        base-directory     = "."
+        files          = ["$TF_WORKING_DIR/tfplan", "$TF_WORKING_DIR/.terraform.lock.hcl"]
+        discard-paths  = "no"
+        base-directory = "."
       }
     })
   }
@@ -391,8 +391,8 @@ resource "aws_codepipeline" "datalake" {
       input_artifacts = ["SourceArtifact", "PlanArtifact"]
 
       configuration = {
-        ProjectName          = aws_codebuild_project.tf_apply.name
-        PrimarySource        = "SourceArtifact"
+        ProjectName   = aws_codebuild_project.tf_apply.name
+        PrimarySource = "SourceArtifact"
       }
     }
   }
