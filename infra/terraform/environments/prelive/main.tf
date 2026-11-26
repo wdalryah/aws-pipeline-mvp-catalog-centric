@@ -11,7 +11,7 @@ terraform {
   # Replace ACCOUNT_ID_PLACEHOLDER with your AWS account ID after running bootstrap.
   # Example: bucket = "datalake-medallion-tfstate-418638389153"
   backend "s3" {
-    bucket         = "datalake-medallion-tfstate-ACCOUNT_ID_PLACEHOLDER"
+    bucket         = "datalake-medallion-tfstate-418638389153"
     key            = "prelive/terraform.tfstate"
     region         = "eu-north-1"
     dynamodb_table = "datalake-medallion-tflock"
