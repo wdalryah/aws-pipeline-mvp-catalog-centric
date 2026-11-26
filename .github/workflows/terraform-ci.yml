@@ -27,9 +27,12 @@ permissions:
   pull-requests: write
 
 env:
-  TF_VERSION:  "1.7.0"
-  AWS_REGION:  "eu-north-1"
-  TF_ROOT:     "infra/terraform/environments/prelive"
+  TF_VERSION:   "1.7.0"
+  AWS_REGION:   "eu-north-1"
+  TF_ROOT:      "infra/terraform/environments/prelive"
+  GITHUB_OWNER: "wdalryah"
+  GITHUB_REPO:  "aws-pipeline-mvp-catalog-centric"
+  OIDC_ROLE:    "arn:aws:iam::418638389153:role/GitHubActions-datalake-medallion"
 
 # ---------------------------------------------------------------------------
 # Jobs
@@ -72,7 +75,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          role-to-assume: ${{ env.OIDC_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -112,7 +115,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          role-to-assume: ${{ env.OIDC_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -126,8 +129,8 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -no-color -out=tfplan
         env:
-          TF_VAR_github_owner: ${{ secrets.GITHUB_ORG }}
-          TF_VAR_github_repo:  ${{ github.event.repository.name }}
+          TF_VAR_github_owner: ${{ env.GITHUB_OWNER }}
+          TF_VAR_github_repo:  ${{ env.GITHUB_REPO }}
 
       - name: Upload plan artifact
         uses: actions/upload-artifact@v4
@@ -139,8 +142,8 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
         env:
-          TF_VAR_github_owner: ${{ secrets.GITHUB_ORG }}
-          TF_VAR_github_repo:  ${{ github.event.repository.name }}
+          TF_VAR_github_owner: ${{ env.GITHUB_OWNER }}
+          TF_VAR_github_repo:  ${{ env.GITHUB_REPO }}
 
       - name: Upload Glue scripts to S3
         run: |
